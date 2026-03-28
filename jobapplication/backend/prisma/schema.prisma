@@ -1,0 +1,68 @@
+// Prisma schema for Prisma Company Application Portal
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications         Application[] @relation("ApplicantApplications")
+  reviewedApplications Application[] @relation("HRReviewer")
+}
+
+model JobPosting {
+  id           Int           @id @default(autoincrement())
+  title        String
+  description  String
+  department   String
+  location     String
+  salaryRange  String?
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  applications Application[]
+}
+
+model Application {
+  id          Int               @id @default(autoincrement())
+  status      ApplicationStatus @default(PENDING)
+  coverLetter String?
+  resumeUrl   String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  applicant   User       @relation("ApplicantApplications", fields: [applicantId], references: [id])
+  applicantId Int
+
+  jobPosting   JobPosting @relation(fields: [jobPostingId], references: [id])
+  jobPostingId Int
+
+  reviewer   User? @relation("HRReviewer", fields: [reviewerId], references: [id])
+  reviewerId Int?
+
+  @@unique([applicantId, jobPostingId])
+}
+
+enum Role {
+  HR
+  APPLICANT
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  ACCEPTED
+  REJECTED
+}
